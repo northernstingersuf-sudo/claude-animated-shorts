@@ -35,7 +35,6 @@ jobs:
       MODE: ${{ inputs.mode || 'smoke' }}
       COMP: ${{ inputs.composition || 'BridgeShort' }}
       FRAME: ${{ inputs.frame || 0 }}
-      TMPDIR: ${{ runner.temp }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,6 +43,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Configure temporary render directory
+        run: echo "TMPDIR=$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Install rendering tools
         run: |
           sudo apt-get update

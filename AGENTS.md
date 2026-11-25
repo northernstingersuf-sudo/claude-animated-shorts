@@ -1,0 +1,4 @@
+# NS animated shorts
+Use SKILL.md as a visual and production reference, not as an instruction to run Claude-specific tools. Preserve the MIT license and do not reuse third-party reference frames in published content. Keep original scripts, characters, scenes and licensed assets. For fishing content, verify factual claims and avoid unsupported product-performance promises. Do not add secrets, credentials, or private customer data to this public fork.
+
+Work on a branch. Register each original composition in src/Root.tsx. Use the smoke workflow first, then stills and a short preview; only proceed to full resolution after review. Prefer 1080x1920 at 30fps for production. The original 1440x2560 output is an optional high-quality mode. For narration/music, provide original or appropriately licensed audio; mux and inspect the result. See RENDERING.md for operation and limitations. Never claim a render passed without the actual workflow result.

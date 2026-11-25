@@ -1,6 +1,6 @@
-"""Generate a deterministic scratch narration, original score and timed SFX.
+"""Generate narration with an explicit engine, original score and timed SFX.
 Usage: python scripts/produce_audio.py audio/example.json out/audio
-Requires espeak-ng and FFmpeg. Narration uses explicit scene cues, not word alignment.
+Requires FFmpeg and the selected voice engine. Run align_voice.py afterwards.
 """
 import argparse
 import json
@@ -10,6 +10,7 @@ import subprocess
 import wave
 from array import array
 from pathlib import Path
+from voice_engines import VoiceEngine
 
 SR=48000
 def cmd(*args):
@@ -37,18 +38,20 @@ def atempo(factor):
     filters.append(f"atempo={factor:.8f}")
     return ",".join(filters)
 def main():
-    p=argparse.ArgumentParser();p.add_argument("config");p.add_argument("output");a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("config");p.add_argument("output");p.add_argument("--engine",choices=["kokoro","voicestudio","espeak"],default="kokoro");a=p.parse_args()
     c=json.loads(Path(a.config).read_text());out=Path(a.output);out.mkdir(parents=True,exist_ok=True)
     duration=float(c["duration"]);assert 0<duration<=120
     n=round(duration*SR);voice=[0.0]*n;music=[0.0]*n;sfx=[0.0]*n
-    spans=[];last=0
+    engine=VoiceEngine(a.engine,c)
+    spans=[];last=0;times=[];factors=[]
     for i,cue in enumerate(c.get("narration",[])):
         start,end=float(cue["start"]),float(cue["end"]);assert last<=start<end<=duration
         last=end;slot=end-start
         raw=out/f"voice-{i}-raw.wav";pcm=out/f"voice-{i}-pcm.wav";fit=out/f"voice-{i}-fit.wav"
-        cmd("espeak-ng","-v",c.get("voice","en-gb"),"-s",str(c.get("rate",165)),"-w",str(raw),"--",cue["text"])
+        times.append(engine.synthesize(cue["text"],raw))
         cmd("ffmpeg","-y","-v","error","-i",str(raw),"-ar",str(SR),"-ac","1","-c:a","pcm_s16le",str(pcm))
         data=read(pcm);factor=max(1,len(data)/SR/slot*1.04)
+        factors.append(factor)
         if factor>1.5:raise ValueError(f"Cue {i} too long for its slot: {factor:.2f}x")
         if factor>1:
             cmd("ffmpeg","-y","-v","error","-i",str(pcm),"-af",atempo(factor),"-ar",str(SR),"-ac","1","-c:a","pcm_s16le",str(fit));data=read(fit)
@@ -81,6 +84,6 @@ def main():
     for name,stem in (("voice",voice),("music",music),("sfx",sfx),("pre-master",mix)):write(out/(name+".wav"),stem)
     cmd("ffmpeg","-y","-v","error","-i",str(out/"pre-master.wav"),"-af","loudnorm=I=-16:TP=-1.5:LRA=7","-ar",str(SR),"-ac","2","-t",str(duration),"-c:a","pcm_s24le",str(out/"mix.wav"))
     (out/"pre-master.wav").unlink()
-    (out/"cues.json").write_text(json.dumps({"duration":duration,"speech_spans":spans,"alignment":"cue-level, not word-level","effects":c.get("effects",[])},indent=2))
-    print(f"Generated {duration}s narrated scratch mix with {len(spans)} cues")
+    (out/"cues.json").write_text(json.dumps({"duration":duration,"speech_spans":spans,"alignment":"cue-level; run align_voice.py for word timings","engine":a.engine,"voice":c.get("kokoro_voice","am_michael") if a.engine=="kokoro" else (engine.voice_id if a.engine=="voicestudio" else c.get("voice","en-gb")),"engine_load_seconds":engine.load_seconds,"synthesis_seconds":times,"tempo_factors":factors,"effects":c.get("effects",[])},indent=2))
+    print(f"Generated {duration}s narrated mix with {len(spans)} cues")
 if __name__=="__main__":main()

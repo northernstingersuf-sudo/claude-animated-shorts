@@ -1,0 +1,54 @@
+{
+  "duration": 5,
+  "voice": "en-gb",
+  "rate": 175,
+  "narration": [
+    {
+      "start": 0.15,
+      "end": 4.65,
+      "text": "A marching column approaches an iron bridge. Watch the scene change as the story begins."
+    }
+  ],
+  "music": {
+    "gain": 0.12,
+    "bpm": 120
+  },
+  "effects": [
+    {
+      "time": 0.5,
+      "type": "step"
+    },
+    {
+      "time": 1,
+      "type": "step"
+    },
+    {
+      "time": 1.5,
+      "type": "step"
+    },
+    {
+      "time": 2,
+      "type": "step"
+    },
+    {
+      "time": 2.5,
+      "type": "step"
+    },
+    {
+      "time": 3,
+      "type": "step"
+    },
+    {
+      "time": 3.5,
+      "type": "step"
+    },
+    {
+      "time": 4,
+      "type": "step"
+    },
+    {
+      "time": 4.333,
+      "type": "whoosh"
+    }
+  ]
+}

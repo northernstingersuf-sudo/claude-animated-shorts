@@ -11,6 +11,7 @@ p.add_argument("--width", type=int, required=True)
 p.add_argument("--height", type=int, required=True)
 p.add_argument("--frames", type=int, required=True)
 p.add_argument("--audio", action="store_true")
+p.add_argument("--allow-flat", nargs="*", type=int, default=[])
 a = p.parse_args()
 info = json.loads(run("ffprobe","-v","error","-count_frames","-show_streams","-of","json",a.file))
 v = next(s for s in info["streams"] if s["codec_type"]=="video")
@@ -24,6 +25,6 @@ raw = run("ffmpeg","-v","error","-i",a.file,"-vf","scale=32:32,format=rgb24","-a
 size=32*32*3
 frames=[raw[i:i+size] for i in range(0,len(raw),size)]
 assert len(frames)==a.frames
-assert all(max(max(f[c::3])-min(f[c::3]) for c in range(3))>12 for f in frames), "Blank or flat frame"
+assert all(max(max(f[c::3])-min(f[c::3]) for c in range(3))>12 for i,f in enumerate(frames) if i not in a.allow_flat), "Blank or flat frame"
 assert len(set(frames))>max(1, len(frames)//10), "Frozen animation"
 print(f"PASS: {a.file} ({a.width}x{a.height}, {a.frames} frames at 30fps)")

@@ -6,13 +6,12 @@
 // source; the grade is display-referred, so it comes after tone mapping. Every pixel-sized parameter is specified at
 // 1080x1920 and scaled with the output size, so stills at --scale 0.5 and the 1440x2560 final match.
 // Place changes crossfade by stacking a second canvas for the fade frames; the hook ends on a 4-frame white flash.
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { AbsoluteFill, cancelRender, continueRender, delayRender, getInputProps, useCurrentFrame } from "remotion";
 import { ThreeCanvas } from "@remotion/three";
-import { useThree } from "@react-three/fiber";
-import { EffectComposer } from "@react-three/postprocessing";
-import { BlendFunction, BloomEffect, ToneMappingEffect, ToneMappingMode } from "postprocessing";
+import { useFrame, useThree } from "@react-three/fiber";
+import { BlendFunction, BloomEffect, EffectComposer, EffectPass, RenderPass, ToneMappingEffect, ToneMappingMode } from "postprocessing";
 import { World, loadKit, hasExternalKit } from "./world";
 import { fallbackKit } from "./fallback-kit";
 import { InkPass, noInkFallback } from "./ink";
@@ -54,54 +53,75 @@ const useKit = () => {
 
 const Inner: React.FC<{ id: number; kit: Kit }> = ({ id, kit }) => {
   const f = useCurrentFrame();
-  const { camera, scene } = useThree();
+  const { camera, scene, gl } = useThree();
   const world = useMemo(() => new World(kit), [kit]);
   const target = useMemo(() => new THREE.Vector3(), []);
   const on = useMemo(toggles, []);
+  const raw = (getInputProps() as {post?: {raw?: boolean}}).post?.raw === true;
+  const composer = useRef<EffectComposer | null>(null);
   const fx = useMemo(() => ({
     ink: new InkPass(scene, camera as THREE.PerspectiveCamera),
     lens: new LensBlur({ maxCoC: 24, nearScale: 1.2 }),
     bloom: makeBloom(),
     tone: new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL }),
     grade: new GradeEffect(GRADES.day, GRADE_STRENGTH.day),
-    grain: new GrainEffect({ amount: 0.025, cellPx: 1.5 }), // film grain, OFF by default (inputProps post.grain): the reference measures no grain and it quadruples the file size
+    grain: new GrainEffect({ amount: 0.025, cellPx: 1.5 }),
   }), [camera, scene]);
-  useEffect(() => () => fx.ink.dispose(), [fx]);
-  const post = useMemo(() => (
-    <EffectComposer multisampling={4}>
-      {on.ink ? <primitive object={fx.ink} dispose={null} /> : null}
-      {on.lens && on.pre ? <primitive object={fx.lens.pre} dispose={null} /> : null}
-      {on.lens ? <primitive object={fx.lens.main} dispose={null} /> : null}
-      {on.bloom ? <primitive object={fx.bloom} dispose={null} /> : null}
-      <primitive object={fx.tone} dispose={null} />
-      {on.grade ? <primitive object={fx.grade} dispose={null} /> : null}
-      {on.grain ? <primitive object={fx.grain} dispose={null} /> : null}
-    </EffectComposer>
-  ), [fx, on]);
-  const cam = camera as THREE.PerspectiveCamera;
-  target.copy(world.update(id, f, cam, scene));
-  noInkFallback(world.root);
-  // thin-lens focus: distance along the view axis to the shot's focus point (default: the camera's look target)
-  const d = dofAt(f);
-  cam.getWorldDirection(fwd);
-  if (d.focus) fpt.set(...d.focus(f)); else fpt.copy(target);
-  fx.lens.focus = Math.max(0.3, fpt.sub(cam.position).dot(fwd));
-  fx.lens.cInf = d.cInf;
-  gradeFor(fx.grade, SHOTS[id - 1].light);
-  fx.grain.seed = f; // deterministic per frame
-  return (
-    <>
-      <primitive object={world.root} dispose={null} />
-      {post}
-    </>
-  );
+
+  const paintFrame = () => {
+    const cam = camera as THREE.PerspectiveCamera;
+    target.copy(world.update(id, f, cam, scene));
+    noInkFallback(world.root);
+    const d = dofAt(f);
+    cam.getWorldDirection(fwd);
+    if (d.focus) fpt.set(...d.focus(f)); else fpt.copy(target);
+    fx.lens.focus = Math.max(0.3, fpt.sub(cam.position).dot(fwd));
+    fx.lens.cInf = d.cInf;
+    gradeFor(fx.grade, SHOTS[id - 1].light);
+    fx.grain.seed = f;
+    scene.updateMatrixWorld(true);
+    if (composer.current) {
+      composer.current.render(1 / 30);
+    } else {
+      gl.setRenderTarget(null);
+      gl.render(scene, cam);
+    }
+  };
+
+  // Mount the actual passes synchronously, rather than relying on a second
+  // React commit inside the postprocessing wrapper after Remotion advances.
+  useLayoutEffect(() => {
+    if (raw) return;
+    const previousTone = gl.toneMapping;
+    gl.toneMapping = THREE.NoToneMapping;
+    const c = new EffectComposer(gl, { multisampling: 0, frameBufferType: THREE.HalfFloatType });
+    c.addPass(new RenderPass(scene, camera));
+    if (on.ink) c.addPass(fx.ink);
+    if (on.lens && on.pre) c.addPass(new EffectPass(camera, fx.lens.pre));
+    if (on.lens) c.addPass(new EffectPass(camera, fx.lens.main));
+    c.addPass(new EffectPass(camera, ...(on.bloom ? [fx.bloom] : []), fx.tone, ...(on.grade ? [fx.grade] : []), ...(on.grain ? [fx.grain] : [])));
+    const size = gl.getSize(new THREE.Vector2());
+    c.setSize(size.x, size.y);
+    composer.current = c;
+    return () => {
+      composer.current = null;
+      c.dispose();
+      gl.toneMapping = previousTone;
+    };
+  }, [camera, scene, gl, fx, on, raw]);
+
+  // One owner of WebGL rendering, after R3F has attached the scene graph.
+  // ThreeCanvas advances this callback before Remotion captures each frame.
+  useFrame(() => paintFrame(), 1);
+  useLayoutEffect(() => { paintFrame(); });
+  return <primitive object={world.root} dispose={null} />;
 };
 
 /** test stills only: inputProps `{ post: { dpr: 0.5 } }` forces the WebGL buffer size (R3F clamps dpr to >= 1 by default) */
 const dprOverride = () => (getInputProps() as { post?: { dpr?: number } }).post?.dpr;
 const ShotView: React.FC<{ id: number; kit: Kit; alpha: number }> = ({ id, kit, alpha }) => (
   <AbsoluteFill style={{ opacity: alpha }}>
-    <ThreeCanvas width={1080} height={1920} {...(dprOverride() ? { dpr: dprOverride() } : {})} shadows gl={{ antialias: false, stencil: false, powerPreference: "high-performance", toneMappingExposure: 1.0 }}
+    <ThreeCanvas width={1080} height={1920} {...(dprOverride() ? { dpr: dprOverride() } : {})} shadows gl={{ antialias: false, stencil: false, powerPreference: "high-performance", preserveDrawingBuffer: true, toneMappingExposure: 1.0 }}
       camera={{ fov: 40, near: 0.2, far: 1500 }}>
       <Inner id={id} kit={kit} />
     </ThreeCanvas>

@@ -28,12 +28,12 @@ def main():
     assert len(cues)==len(spans) and cues
     segments=[{"text":c["text"],"start":float(s[0]),"end":float(s[1])} for c,s in zip(cues,spans)]
     t=time.perf_counter()
-    result=whisperx.align(segments,model,md,audio,"cpu",interpolate_method="ignore",return_char_alignments=False)
+    result=whisperx.align(segments,model,md,audio,"cpu",interpolate_method="nearest",return_char_alignments=False)
     seconds=time.perf_counter()-t
     expected=sum(len(tokens(c["text"])) for c in cues)
     words=[]
     for w in result["word_segments"]:
-        if "start" not in w or "end" not in w:continue
+        if "start" not in w or "end" not in w or "score" not in w:continue
         s,e=float(w["start"]),float(w["end"])
         if not (math.isfinite(s) and math.isfinite(e) and 0<=s<e<=cfg["duration"]+.001):continue
         if words and s<words[-1]["e"]-.02:raise ValueError("Nonmonotonic alignment")

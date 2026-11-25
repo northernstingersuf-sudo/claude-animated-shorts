@@ -23,6 +23,11 @@ on:
         type: choice
         options: [auto, none, bridge-original]
         default: auto
+      voice_engine:
+        description: Narration engine for generated audio (VoiceStudio runs locally)
+        type: choice
+        options: [kokoro, espeak]
+        default: kokoro
 
 permissions:
   contents: read
@@ -42,6 +47,7 @@ jobs:
       COMP: ${{ inputs.composition || 'BridgeShort' }}
       FRAME: ${{ inputs.frame || 0 }}
       AUDIO_MODE: ${{ inputs.audio || 'auto' }}
+      VOICE_ENGINE: ${{ inputs.voice_engine || 'kokoro' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -102,13 +108,26 @@ jobs:
           python scripts/verify_stills.py out/bridge-100.png out/bridge-400.png
       - name: Generate narrated bridge preview soundtrack
         if: always() && (env.MODE == 'smoke' || env.MODE == 'bridge-preview')
-        run: python scripts/produce_audio.py audio/bridge-preview.json out/bridge-audio
+        run: python scripts/produce_audio.py audio/bridge-preview.json out/bridge-audio --engine espeak
       - name: Render five-second bridge preview
         if: env.MODE == 'smoke' || env.MODE == 'bridge-preview'
         run: |
           npx --no-install remotion render src/index.ts BridgeShort out/bridge-preview-silent.mp4 --frames=0-149 --scale=0.5 --codec=h264 --crf=20 --concurrency=1 --gl=swangle --timeout=180000 --props='{"post":{"dpr":0.5}}'
           ffmpeg -y -v error -i out/bridge-preview-silent.mp4 -i out/bridge-audio/mix.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -af apad -shortest out/bridge-preview.mp4
           python scripts/verify_video.py out/bridge-preview.mp4 --width 540 --height 960 --frames 150 --audio --allow-flat 130 131 132 133
+      - name: Generate and align production narration before rendering
+        if: env.MODE != 'smoke' && env.MODE != 'bridge-preview' && env.MODE != 'still' && env.AUDIO_MODE == 'auto'
+        shell: bash
+        run: |
+          [[ "$COMP" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 1
+          if [[ ! -f "public/audio/$COMP.wav" && -f "audio/$COMP.json" ]]; then
+            if [[ "$VOICE_ENGINE" == "kokoro" ]]; then bash scripts/install_voice.sh; fi
+            python scripts/produce_audio.py "audio/$COMP.json" out/generated-audio --engine "$VOICE_ENGINE"
+            if [[ "$VOICE_ENGINE" == "kokoro" ]]; then
+              python scripts/align_voice.py "audio/$COMP.json" out/generated-audio
+              python scripts/verify_voice.py "audio/$COMP.json" out/generated-audio
+            fi
+          fi
       - name: Requested render
         if: env.MODE != 'smoke' && env.MODE != 'bridge-preview'
         shell: bash
@@ -132,7 +151,7 @@ jobs:
             bash scripts/original_bridge_audio.sh audio/bridge/voice.wav audio/bridge/words.json out/original-bridge-audio
             AUDIO="out/original-bridge-audio/mix.wav"
           elif [[ "$AUDIO_MODE" == "auto" && ! -f "$AUDIO" && -f "audio/$COMP.json" ]]; then
-            python scripts/produce_audio.py "audio/$COMP.json" out/generated-audio
+            test -s out/generated-audio/mix.wav
             AUDIO="out/generated-audio/mix.wav"
           fi
           if [[ "$AUDIO_MODE" != "none" && -f "$AUDIO" ]]; then

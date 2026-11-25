@@ -32,7 +32,12 @@ def main():
     rtf=sum(m["synthesis_seconds"])/max(.001,speech_seconds)
     t=time.perf_counter();model=WhisperModel("tiny.en",device="cpu",compute_type="int8",cpu_threads=2)
     model_load=time.perf_counter()-t;t=time.perf_counter()
-    seg,_=model.transcribe(str(out/"voice.wav"),language="en",beam_size=5,condition_on_previous_text=False,vad_filter=False)
+    # Decode and resample using the already installed FFmpeg CLI. The ndarray
+    # input path avoids incompatible PyAV av.open keyword arguments.
+    pcm=subprocess.check_output(["ffmpeg","-v","error","-i",str(out/"voice.wav"),"-ac","1","-ar","16000","-f","f32le","-"])
+    audio16=np.frombuffer(pcm,dtype="<f4").copy()
+    assert abs(len(audio16)/16000-cfg["duration"])<.05, "Invalid ASR resampling"
+    seg,_=model.transcribe(audio16,language="en",beam_size=5,condition_on_previous_text=False,vad_filter=False)
     actual=" ".join(s.text for s in seg)
     asr_sec=time.perf_counter()-t
     expected=" ".join(c["text"] for c in cfg["narration"])

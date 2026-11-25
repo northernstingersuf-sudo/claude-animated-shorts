@@ -1,0 +1,71 @@
+name: Neural voice validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/produce_audio.py'
+      - 'scripts/voice_engines.py'
+      - 'scripts/align_voice.py'
+      - 'scripts/verify_voice.py'
+      - 'scripts/install_voice.sh'
+      - 'requirements-neural-audio.txt'
+      - 'audio/**'
+      - '.github/workflows/voice.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: voice-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  voice:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      HF_HUB_DISABLE_XET: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install FFmpeg and phonemizer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg espeak-ng libespeak-ng1 libsndfile1
+          mkdir -p out
+      - name: Restore model caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/kokoro
+            ~/.cache/huggingface/hub
+          key: voice-v1-kokoro-v1-whisper-tiny-en-wav2vec2-${{ runner.os }}-${{ hashFiles('requirements-neural-audio.txt') }}
+      - name: Install CPU neural speech stack
+        run: bash scripts/install_voice.sh
+      - name: Synthesize Kokoro narration and soundtrack
+        run: python scripts/produce_audio.py audio/voice-smoke.json out/kokoro --engine kokoro
+      - name: WhisperX word alignment
+        run: python scripts/align_voice.py audio/voice-smoke.json out/kokoro
+      - name: Objective quality and performance checks
+        run: python scripts/verify_voice.py audio/voice-smoke.json out/kokoro
+      - name: Generate eSpeak comparison
+        if: always()
+        run: |
+          python scripts/produce_audio.py audio/voice-smoke.json out/espeak --engine espeak
+          python scripts/align_voice.py audio/voice-smoke.json out/espeak
+          python scripts/verify_voice.py audio/voice-smoke.json out/espeak --max-wer 1.0 --max-rtf 10
+      - name: Export voice samples and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-validation-${{ github.run_id }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 7

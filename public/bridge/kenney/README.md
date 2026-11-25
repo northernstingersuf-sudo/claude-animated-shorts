@@ -1,2 +1,2 @@
-# Optional bridge assets
-The upstream bridge template attempts to load Kenney GLB models from this directory. Models are not bundled here. It catches individual load failures and uses an incomplete scene without those props. Add the matching CC0 models before visual comparison or production use. Keep license notices with third-party assets.
+# Bridge props
+The default kit now includes original procedural substitutes for all 25 expected model names, with no network dependency. The template already draws its own detailed vegetation and banners. To override a substitute, put the licensed Kenney GLB with the exact name in this directory (see KENNEY_NAMES in templates/bridge/fallback-kit.ts); retain its license. Original Kenney files are not included or required for a preview. The procedural models do not claim exact visual equivalence to the original assets.

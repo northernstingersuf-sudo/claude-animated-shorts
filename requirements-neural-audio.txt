@@ -1,0 +1,9 @@
+# Install CPU torch/torchaudio first, see VOICE.md.
+kokoro-onnx==0.4.9
+soundfile==0.13.1
+whisperx==3.4.2
+pyannote-audio==3.3.2
+transformers==4.51.3
+faster-whisper==1.1.1
+ctranslate2==4.4.0
+numpy==2.2.6

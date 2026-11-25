@@ -8,12 +8,13 @@
 // Place changes crossfade by stacking a second canvas for the fade frames; the hook ends on a 4-frame white flash.
 import React, { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
-import { AbsoluteFill, continueRender, delayRender, getInputProps, useCurrentFrame } from "remotion";
+import { AbsoluteFill, cancelRender, continueRender, delayRender, getInputProps, useCurrentFrame } from "remotion";
 import { ThreeCanvas } from "@remotion/three";
 import { useThree } from "@react-three/fiber";
 import { EffectComposer } from "@react-three/postprocessing";
 import { BlendFunction, BloomEffect, ToneMappingEffect, ToneMappingMode } from "postprocessing";
-import { World, loadKit } from "./world";
+import { World, loadKit, hasExternalKit } from "./world";
+import { fallbackKit } from "./fallback-kit";
 import { InkPass, noInkFallback } from "./ink";
 import { LensBlur, GrainEffect } from "./lensblur";
 import { GradeEffect, GRADES, GRADE_STRENGTH, gradeFor } from "./grade";
@@ -40,9 +41,14 @@ const makeBloom = () => {
 const fwd = new THREE.Vector3(), fpt = new THREE.Vector3();
 
 const useKit = () => {
-  const [kit, setKit] = useState<Kit | null>(null);
-  const [handle] = useState(() => delayRender("bridge kit"));
-  useEffect(() => { loadKit().then((k) => { setKit(k); continueRender(handle); }); }, [handle]);
+  // No asynchronous state transition when using bundled procedural assets.
+  const [kit, setKit] = useState<Kit | null>(() => hasExternalKit() ? null : fallbackKit());
+  const [handle] = useState(() => kit === null ? delayRender("bridge kit") : null);
+  useEffect(() => {
+    if (handle !== null) loadKit().then(setKit).catch(cancelRender);
+  }, [handle]);
+  // Release only after the loaded kit has committed and ThreeCanvas has mounted.
+  useEffect(() => { if (kit !== null && handle !== null) continueRender(handle); }, [kit, handle]);
   return kit;
 };
 

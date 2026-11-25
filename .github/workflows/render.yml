@@ -92,13 +92,16 @@ jobs:
       - name: Bridge template stills
         if: env.MODE == 'smoke'
         run: |
+          # Diagnostic raw scene: distinguishes geometry/camera issues from post-processing issues.
+          npx --no-install remotion still src/index.ts BridgeShort out/bridge-raw-100.png --frame=100 --scale=0.5 --gl=swangle --timeout=180000 --props='{"post":{"raw":true,"dpr":0.5}}'
           for frame in 100 400; do
             npx --no-install remotion still src/index.ts BridgeShort "out/bridge-${frame}.png" --frame="$frame" --scale=0.5 --gl=swangle --timeout=180000
             test "$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "out/bridge-${frame}.png")" = "540,960"
           done
+          python scripts/verify_stills.py out/bridge-raw-100.png
           python scripts/verify_stills.py out/bridge-100.png out/bridge-400.png
       - name: Generate narrated bridge preview soundtrack
-        if: env.MODE == 'smoke' || env.MODE == 'bridge-preview'
+        if: always() && (env.MODE == 'smoke' || env.MODE == 'bridge-preview')
         run: python scripts/produce_audio.py audio/bridge-preview.json out/bridge-audio
       - name: Render five-second bridge preview
         if: env.MODE == 'smoke' || env.MODE == 'bridge-preview'

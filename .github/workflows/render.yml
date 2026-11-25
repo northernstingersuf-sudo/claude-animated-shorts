@@ -1,0 +1,112 @@
+name: Render videos
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Render mode
+        type: choice
+        options: [smoke, still, draft, production, high-quality]
+        default: smoke
+      composition:
+        description: Registered composition ID
+        type: string
+        default: BridgeShort
+      frame:
+        description: Frame number for still mode
+        type: number
+        default: 100
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CI: 'true'
+      MODE: ${{ inputs.mode || 'smoke' }}
+      COMP: ${{ inputs.composition || 'BridgeShort' }}
+      FRAME: ${{ inputs.frame || 0 }}
+      TMPDIR: ${{ runner.temp }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install rendering tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libgbm1 libnss3 libatk1.0-0t64 libatk-bridge2.0-0t64 libasound2t64 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libxkbcommon0 libcups2t64
+          node --version
+          python --version
+          ffmpeg -version | head -n 1
+          df -h
+      - name: Install JavaScript dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+          npm ls --depth=0
+          mkdir -p out
+          cp package-lock.json out/package-lock.json
+      - name: Type check
+        run: npm run typecheck
+      - name: Smoke test 2D and WebGL
+        if: env.MODE == 'smoke'
+        run: |
+          npx --no-install remotion render src/index.ts Smoke2D out/smoke-2d.mp4 --codec=h264 --concurrency=1 --gl=swangle
+          python scripts/verify_video.py out/smoke-2d.mp4 --width 540 --height 960 --frames 30
+          npx --no-install remotion render src/index.ts Smoke3D out/smoke-3d.mp4 --codec=h264 --concurrency=1 --gl=swangle
+          python scripts/verify_video.py out/smoke-3d.mp4 --width 540 --height 960 --frames 30
+      - name: Smoke test audio mux
+        if: env.MODE == 'smoke'
+        run: |
+          ffmpeg -y -v error -f lavfi -i sine=frequency=440:sample_rate=48000 -t 1 out/test-tone.wav
+          ffmpeg -y -v error -i out/smoke-3d.mp4 -i out/test-tone.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -shortest out/smoke-audio.mp4
+          python scripts/verify_video.py out/smoke-audio.mp4 --width 540 --height 960 --frames 30 --audio
+      - name: Bridge template stills
+        if: env.MODE == 'smoke'
+        run: |
+          for frame in 100 400; do
+            npx --no-install remotion still src/index.ts BridgeShort "out/bridge-${frame}.png" --frame="$frame" --scale=0.5 --gl=swangle --timeout=180000
+            test "$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "out/bridge-${frame}.png")" = "540,960"
+          done
+      - name: Requested render
+        if: env.MODE != 'smoke'
+        shell: bash
+        run: |
+          [[ "$COMP" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo "Invalid composition ID"; exit 1; }
+          case "$MODE" in
+            still)
+              [[ "$FRAME" =~ ^[0-9]+$ ]] || exit 1
+              npx --no-install remotion still src/index.ts "$COMP" "out/$COMP.png" --frame="$FRAME" --scale=0.5 --gl=swangle --timeout=180000
+              exit 0 ;;
+            draft) SCALE=0.5 ;;
+            production) SCALE=1 ;;
+            high-quality) SCALE=1.3333333333333333 ;;
+            *) exit 1 ;;
+          esac
+          npx --no-install remotion render src/index.ts "$COMP" "out/$COMP.mp4" --codec=h264 --crf=18 --scale="$SCALE" --concurrency=1 --gl=swangle --timeout=180000
+          AUDIO="public/audio/$COMP.wav"
+          if [[ -f "$AUDIO" ]]; then
+            ffmpeg -y -v error -i "out/$COMP.mp4" -i "$AUDIO" -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -af apad -shortest "out/$COMP-final.mp4"
+            rm "out/$COMP.mp4"
+          fi
+          ffprobe -v error -show_format -show_streams -of json out/*.mp4 > out/media-info.json
+      - name: Upload render artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-${{ github.run_id }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 7

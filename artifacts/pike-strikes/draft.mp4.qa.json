@@ -1,0 +1,9 @@
+{
+  "file": "out/pike-strikes/draft.mp4",
+  "decoded_frames": 1800,
+  "min_mean_rgb": 76.17219650205762,
+  "max_mean_rgb": 140.01453189300412,
+  "largest_identical_frame_run": 1,
+  "mean_interframe_rgb_delta": 0.5108864993011664,
+  "flat_frames": []
+}

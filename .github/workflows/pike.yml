@@ -1,0 +1,42 @@
+name: Pike short 001
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [stills, preview, draft]
+        default: draft
+        description: Render stage (review draft before production)
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libgbm1 libnss3 libatk1.0-0t64 libatk-bridge2.0-0t64 libasound2t64 libcups2t64
+          npm ci --no-audit --no-fund
+          npm run typecheck
+      - name: Smoke render
+        run: |
+          npx --no-install remotion render src/index.ts Smoke3D out/smoke.mp4 --concurrency=1 --gl=swangle
+          python scripts/verify_video.py out/smoke.mp4 --width 540 --height 960 --frames 30
+      - name: Render requested stage with checked narration
+        env:
+          PIKE_MODE: ${{ inputs.mode }}
+        run: node scripts/pike-render.mjs "$PIKE_MODE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pike-001-${{ github.run_id }}
+          path: out/
+          retention-days: 14

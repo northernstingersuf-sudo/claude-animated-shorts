@@ -1,0 +1,10 @@
+{
+  "model": "facebook/wav2vec2-base-960h",
+  "engine": "whisperx",
+  "coverage": 1.0,
+  "expected_words": 146,
+  "aligned_words": 146,
+  "model_load_seconds": 11.345533246000002,
+  "alignment_seconds": 8.052744449999977,
+  "fps": 30
+}

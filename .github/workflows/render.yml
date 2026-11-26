@@ -39,6 +39,7 @@ concurrency:
 
 jobs:
   render:
+    if: ${{ !(inputs.composition == 'PikeStrikes' && (inputs.mode == 'draft' || inputs.mode == 'production')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
@@ -167,3 +168,9 @@ jobs:
           path: out/
           if-no-files-found: warn
           retention-days: 7
+
+  pike-full:
+    if: ${{ inputs.composition == 'PikeStrikes' && (inputs.mode == 'draft' || inputs.mode == 'production') }}
+    uses: ./.github/workflows/pike-full.yml
+    with:
+      resolution: ${{ inputs.mode }}

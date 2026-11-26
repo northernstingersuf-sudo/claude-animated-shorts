@@ -1,0 +1,41 @@
+Bundling 6%
+Bundling 17%
+Bundling 40%
+Bundling 61%
+Bundling 69%
+Bundling 74%
+Bundling 80%
+Bundling 85%
+Bundling 90%
+Bundling 95%
+Bundling 100%
+Getting composition
+Composition          BridgeShort
+Format               png
+Output               out/bridge-check.png
+Rendered 0/1
+Rendered 0/1
+Tried to get delayRender() handles for timeout, but could not do so because of Error: Timed out evaluating page function "() => {
+                        return Object.keys(window.remotion_delayRenderTimeouts)
+                            .map((id, i) => {
+                            const { label } = window.remotion_delayRenderTimeouts[id];
+                            if (label === null) {
+                                return `${i + 1}. (no label)`;
+                            }
+                            return `"${i + 1}. ${label}"`;
+                        })
+                            .join(', ');
+                    }"
+    at Timeout._onTimeout (/workspace/shorts/node_modules/@remotion/renderer/dist/puppeteer-evaluate.js:34:24)
+    at listOnTimeout (node:internal/timers:685:17)
+    at process.processTimers (node:internal/timers:618:7)
+
+TimeoutError: waiting for the page to render the React component failed: timeout 33000ms exceeded
+    at new WaitTask (/workspace/shorts/node_modules/@remotion/renderer/dist/browser/DOMWorld.js:146:34)
+    at DOMWorld.waitForFunction (/workspace/shorts/node_modules/@remotion/renderer/dist/browser/DOMWorld.js:95:16)
+    at /workspace/shorts/node_modules/@remotion/renderer/dist/seek-to-frame.js:42:54
+    at new Promise (<anonymous>)
+    at waitForReady (/workspace/shorts/node_modules/@remotion/renderer/dist/seek-to-frame.js:41:30)
+    at seekToFrame (/workspace/shorts/node_modules/@remotion/renderer/dist/seek-to-frame.js:129:36)
+    at innerRenderStill (/workspace/shorts/node_modules/@remotion/renderer/dist/render-still.js:216:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)

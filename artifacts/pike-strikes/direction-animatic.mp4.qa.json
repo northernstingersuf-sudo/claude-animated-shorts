@@ -1,0 +1,9 @@
+{
+  "file": "out/pike-strikes/direction-animatic.mp4",
+  "decoded_frames": 1800,
+  "min_mean_rgb": 61.11059670781893,
+  "max_mean_rgb": 131.59850823045267,
+  "largest_identical_frame_run": 1,
+  "mean_interframe_rgb_delta": 2.324786882916206,
+  "flat_frames": []
+}

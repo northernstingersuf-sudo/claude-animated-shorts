@@ -1,0 +1,3 @@
+# CPU builds successfully used for short 001; prevent transitive replacement.
+torch==2.6.0+cpu
+torchaudio==2.6.0+cpu

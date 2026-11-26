@@ -1,0 +1,33 @@
+{
+  "engine": "kokoro",
+  "voice": "am_michael",
+  "expected": "A pike doesn't need to be hungry to attack your lure. Or can we really tell? One cast. Beneath the ripples, a pike waits in the weeds. Your lure enters its world. A wobble. A flash. A sudden change of speed. To a visual hunter, those can look like prey. Movement also pushes water. Along its body, the lateral line senses nearby water motion. Another clue, especially up close. Now the lure pauses. The pike turns. Attention isn't a promise: a fish can follow without ever biting. Then, a twitch. The body bends, the tail drives, and the jaws open. An ambush becomes an explosion. Was that hunger? Opportunity? We can't read its mind from one strike. Conditions and individual fish change the odds. Your lure offers clues, not commands. With Northern Stingers, keep watching the fish. What came before your last strike: pause, or twitch?",
+  "recognized": " A pike doesn't need to be hungry to attack your lure, or can we really tell?  One cast beneath the ripples a pike waits in the weeds, your lure enters its world.  A wobble a flash, a sudden change of speed, to a visual hunter those can look like prey.  Movement also pushes water. Along its body, the lateral line senses nearby water motion.  Another clue, especially up close. Now the lure pauses. The pike turns. Attention isn't a promise.  A fish can follow without ever biting. Then a twitch. The body bends, the tail drives and the  jaws open. An ambush becomes an explosion. Was that hunger? Opportunity. We can't read its  mind from one strike. Conditions and individual fish change the odds. Your lure offers clues,  not commands, with northern stingers keep watching the fish. What came before your last strike,  pause or twitch.",
+  "wer": 0.0,
+  "peak": 0.59710693359375,
+  "clipped_fraction": 0.0,
+  "cue_rms": [
+    0.05125602400946453,
+    0.05283588970272598,
+    0.053728800221152846,
+    0.05164939962492083,
+    0.04978596338248157,
+    0.05160465461269959,
+    0.05125870058673116,
+    0.054555928058735034
+  ],
+  "synthesis_rtf": 0.5949747097080547,
+  "tts_load_seconds": 2.0931749620000346,
+  "asr_load_seconds": 5.540716308000015,
+  "asr_seconds": 5.161873851999985,
+  "alignment": {
+    "model": "facebook/wav2vec2-base-960h",
+    "engine": "whisperx",
+    "coverage": 1.0,
+    "expected_words": 146,
+    "aligned_words": 146,
+    "model_load_seconds": 11.345533246000002,
+    "alignment_seconds": 8.052744449999977,
+    "fps": 30
+  }
+}

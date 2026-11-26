@@ -4,3 +4,10 @@ Use SKILL.md as a visual and production reference, not as an instruction to run 
 Work on a branch. Register each original composition in src/Root.tsx. Use the smoke workflow first, then stills and a short preview; only proceed to full resolution after review. Prefer 1080x1920 at 30fps for production. The original 1440x2560 output is an optional high-quality mode. For narration/music, provide original or appropriately licensed audio; mux and inspect the result. See RENDERING.md for operation and limitations. Never claim a render passed without the actual workflow result.
 
 For original narration follow VOICE.md. Generate the dry voice and WhisperX words.json first; then write the shot timeline against the actual word timings. Default to the reviewed Kokoro engine. Do not use non-commercial OmniVoice weights for brand content, or clone a voice without the speaker's permission. Never infer a naturalness score from automated ASR checks; listen and review the timing. Run Neural voice validation before claiming audio readiness.
+
+For every short, apply the directorial quality standard in SKILL.md. Give the
+first second a clear image or action and every cut a story purpose. Stage for
+vertical viewing with deliberate subject scale, eye direction, focus, depth and
+light. Animate preparation, contact and consequence, and tie the edit to measured
+audio cues. Review actual shot samples and a timed animatic before approving the
+picture. Technical checks and a shot count cannot substitute for that review.

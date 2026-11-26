@@ -26,6 +26,32 @@ User rules that apply:
 - Save after every step.
 - "Just do it" once the script is approved.
 
+## Directorial quality standard
+
+- Give the opening second a legible action, threat or revealing composition. The
+  first image should work at phone size and carry the hook before narration can
+  explain it. Track what the viewer knows after each beat.
+- Storyboard each shot with its story job, subject and eyeline, shot size, angle,
+  motion, focus target, light and cut point. Cut on a change in information,
+  attention or action. Alternate orientation, detail and reaction where the
+  story needs them. Combine two shots if they perform the same job.
+- Make 9:16 part of the staging. Use vertical paths and stack foreground,
+  subject and background. Check camera travel, frame edges and intentional
+  occlusion. Build alternate drawings where an angle would expose a card edge.
+- Move the camera for a reason. Track action, dolly to change our relation to a
+  subject, orbit to reveal space, use POV for attention, overhead for geography,
+  and macro for cause or reaction. Place near and far subjects before using a
+  rack focus. Let a pause hold when it builds anticipation.
+- Block action in poses for preparation, acceleration, contact and follow-through.
+  Show what moved the environment and how the disturbance settles. Reserve
+  slow motion for a readable change of state, and return to real time for impact
+  or release. Use measured narration and sound cues to place reactions and cuts.
+- Review rendered frames from each setup and a low-resolution animatic with the
+  soundtrack. Judge hook clarity, subject readability, spatial continuity,
+  rhythm, action, depth and repeated compositions at phone scale. Fix weak
+  beats and recheck the affected sections. Technical checks complement this
+  review. Shot count is a planning range and earns no credit on its own.
+
 ## Pipeline
 1. **Topic and facts.** Pick one surprising true story with a physical cause and effect (it should be visual), plus a simple everyday analogy that explains it.
    - Write the facts with their source at the top of `SCRIPT.md`.

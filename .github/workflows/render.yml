@@ -1,0 +1,169 @@
+name: Render videos
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Render mode
+        type: choice
+        options: [smoke, bridge-preview, still, draft, production, high-quality]
+        default: smoke
+      composition:
+        description: Registered composition ID
+        type: string
+        default: BridgeShort
+      frame:
+        description: Frame number for still mode
+        type: number
+        default: 100
+      audio:
+        description: Audio source (auto uses a supplied WAV or an audio cue JSON)
+        type: choice
+        options: [auto, none, bridge-original]
+        default: auto
+      voice_engine:
+        description: Narration engine for generated audio (VoiceStudio runs locally)
+        type: choice
+        options: [kokoro, espeak]
+        default: kokoro
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: render-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CI: 'true'
+      MODE: ${{ inputs.mode || 'smoke' }}
+      COMP: ${{ inputs.composition || 'BridgeShort' }}
+      FRAME: ${{ inputs.frame || 0 }}
+      AUDIO_MODE: ${{ inputs.audio || 'auto' }}
+      VOICE_ENGINE: ${{ inputs.voice_engine || 'kokoro' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Configure temporary render directory
+        run: echo "TMPDIR=$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Install rendering tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg espeak-ng libgbm1 libnss3 libatk1.0-0t64 libatk-bridge2.0-0t64 libasound2t64 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libxkbcommon0 libcups2t64
+          node --version
+          python --version
+          ffmpeg -version | head -n 1
+          df -h
+      - name: Install JavaScript dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -f package-lock.json ]; then
+            # Transitional bootstrap: use the lock from the successful smoke run, never resolve floating versions.
+            gh run download 45705417072 --name render-45705417072 --dir "$RUNNER_TEMP/original-smoke"
+            cp "$RUNNER_TEMP/original-smoke/package-lock.json" .
+            echo "bb81de230018d3329c980612a90d3d9ca1dfa987c074302f7437e1623bb0ef8b  package-lock.json" | sha256sum -c -
+          fi
+          npm ci --no-audit --no-fund
+          npm ls --depth=0
+          mkdir -p out
+          cp package-lock.json out/package-lock.json
+      - name: Type check
+        run: npm run typecheck
+      - name: Smoke test 2D and WebGL
+        if: env.MODE == 'smoke'
+        run: |
+          npx --no-install remotion render src/index.ts Smoke2D out/smoke-2d.mp4 --codec=h264 --concurrency=1 --gl=swangle
+          python scripts/verify_video.py out/smoke-2d.mp4 --width 540 --height 960 --frames 30
+          npx --no-install remotion render src/index.ts Smoke3D out/smoke-3d.mp4 --codec=h264 --concurrency=1 --gl=swangle
+          python scripts/verify_video.py out/smoke-3d.mp4 --width 540 --height 960 --frames 30
+      - name: Smoke test audio mux
+        if: env.MODE == 'smoke'
+        run: |
+          ffmpeg -y -v error -f lavfi -i sine=frequency=440:sample_rate=48000 -t 1 out/test-tone.wav
+          ffmpeg -y -v error -i out/smoke-3d.mp4 -i out/test-tone.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -shortest out/smoke-audio.mp4
+          python scripts/verify_video.py out/smoke-audio.mp4 --width 540 --height 960 --frames 30 --audio
+      - name: Bridge template stills
+        if: env.MODE == 'smoke'
+        run: |
+          # Diagnostic raw scene: distinguishes geometry/camera issues from post-processing issues.
+          npx --no-install remotion still src/index.ts BridgeShort out/bridge-raw-100.png --frame=100 --scale=0.5 --gl=swangle --timeout=180000 --props='{"post":{"raw":true,"dpr":0.5}}'
+          for frame in 100 400; do
+            npx --no-install remotion still src/index.ts BridgeShort "out/bridge-${frame}.png" --frame="$frame" --scale=0.5 --gl=swangle --timeout=180000
+            test "$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "out/bridge-${frame}.png")" = "540,960"
+          done
+          python scripts/verify_stills.py out/bridge-raw-100.png
+          python scripts/verify_stills.py out/bridge-100.png out/bridge-400.png
+      - name: Generate narrated bridge preview soundtrack
+        if: always() && (env.MODE == 'smoke' || env.MODE == 'bridge-preview')
+        run: python scripts/produce_audio.py audio/bridge-preview.json out/bridge-audio --engine espeak
+      - name: Render five-second bridge preview
+        if: env.MODE == 'smoke' || env.MODE == 'bridge-preview'
+        run: |
+          npx --no-install remotion render src/index.ts BridgeShort out/bridge-preview-silent.mp4 --frames=0-149 --scale=0.5 --codec=h264 --crf=20 --concurrency=1 --gl=swangle --timeout=180000 --props='{"post":{"dpr":0.5}}'
+          ffmpeg -y -v error -i out/bridge-preview-silent.mp4 -i out/bridge-audio/mix.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -af apad -shortest out/bridge-preview.mp4
+          python scripts/verify_video.py out/bridge-preview.mp4 --width 540 --height 960 --frames 150 --audio --allow-flat 130 131 132 133
+      - name: Generate and align production narration before rendering
+        if: env.MODE != 'smoke' && env.MODE != 'bridge-preview' && env.MODE != 'still' && env.AUDIO_MODE == 'auto'
+        shell: bash
+        run: |
+          [[ "$COMP" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 1
+          if [[ ! -f "public/audio/$COMP.wav" && -f "audio/$COMP.json" ]]; then
+            if [[ "$VOICE_ENGINE" == "kokoro" ]]; then bash scripts/install_voice.sh; fi
+            python scripts/produce_audio.py "audio/$COMP.json" out/generated-audio --engine "$VOICE_ENGINE"
+            if [[ "$VOICE_ENGINE" == "kokoro" ]]; then
+              python scripts/align_voice.py "audio/$COMP.json" out/generated-audio
+              python scripts/verify_voice.py "audio/$COMP.json" out/generated-audio
+            fi
+          fi
+      - name: Requested render
+        if: env.MODE != 'smoke' && env.MODE != 'bridge-preview'
+        shell: bash
+        run: |
+          [[ "$COMP" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo "Invalid composition ID"; exit 1; }
+          case "$MODE" in
+            still)
+              [[ "$FRAME" =~ ^[0-9]+$ ]] || exit 1
+              npx --no-install remotion still src/index.ts "$COMP" "out/$COMP.png" --frame="$FRAME" --scale=0.5 --gl=swangle --timeout=180000
+              exit 0 ;;
+            draft) SCALE=0.5 ;;
+            production) SCALE=1 ;;
+            high-quality) SCALE=1.3333333333333333 ;;
+            *) exit 1 ;;
+          esac
+          npx --no-install remotion render src/index.ts "$COMP" "out/$COMP.mp4" --codec=h264 --crf=18 --scale="$SCALE" --concurrency=1 --gl=swangle --timeout=180000
+          AUDIO="public/audio/$COMP.wav"
+          if [[ "$AUDIO_MODE" == "bridge-original" ]]; then
+            [[ "$COMP" == "BridgeShort" ]] || { echo "Original score is bridge-specific"; exit 1; }
+            python -m pip install -r requirements-bridge-audio.txt
+            bash scripts/original_bridge_audio.sh audio/bridge/voice.wav audio/bridge/words.json out/original-bridge-audio
+            AUDIO="out/original-bridge-audio/mix.wav"
+          elif [[ "$AUDIO_MODE" == "auto" && ! -f "$AUDIO" && -f "audio/$COMP.json" ]]; then
+            test -s out/generated-audio/mix.wav
+            AUDIO="out/generated-audio/mix.wav"
+          fi
+          if [[ "$AUDIO_MODE" != "none" && -f "$AUDIO" ]]; then
+            ffmpeg -y -v error -i "out/$COMP.mp4" -i "$AUDIO" -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -af apad -shortest "out/$COMP-final.mp4"
+            rm "out/$COMP.mp4"
+          fi
+          ffprobe -v error -show_format -show_streams -of json out/*.mp4 > out/media-info.json
+      - name: Upload render artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-${{ github.run_id }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 7

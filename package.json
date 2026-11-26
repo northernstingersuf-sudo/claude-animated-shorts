@@ -1,0 +1,31 @@
+{
+  "name": "ns-animated-shorts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "render": "remotion render src/index.ts",
+    "still": "remotion still src/index.ts"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.547",
+    "@remotion/three": "4.0.547",
+    "@remotion/bundler": "4.0.547",
+    "@remotion/renderer": "4.0.547",
+    "remotion": "4.0.547",
+    "@react-three/fiber": "^9.7.0",
+    "@react-three/postprocessing": "3.2.2",
+    "postprocessing": "^6.39.3",
+    "three": "0.182.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.182.0",
+    "typescript": "~5.9.3"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "duration": 14,
+  "language": "en",
+  "kokoro_voice": "am_michael",
+  "kokoro_language": "en-us",
+  "neural_speed": 1,
+  "voice": "en-gb",
+  "rate": 165,
+  "narration": [
+    {
+      "start": 0.3,
+      "end": 6.5,
+      "text": "A northern pike waits quietly beneath the surface. Then a fishing lure swims past."
+    },
+    {
+      "start": 7,
+      "end": 13.7,
+      "text": "The fish turns toward the moving lure. A sharp splash breaks the calm water."
+    }
+  ],
+  "music": {
+    "gain": 0.08,
+    "bpm": 120
+  },
+  "effects": [
+    {
+      "time": 11.8,
+      "type": "splash"
+    }
+  ]
+}

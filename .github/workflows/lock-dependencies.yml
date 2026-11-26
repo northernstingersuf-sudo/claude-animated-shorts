@@ -1,0 +1,36 @@
+name: Commit verified npm lockfile
+
+on:
+  push:
+    branches: [feat/remotion-render-pipeline]
+    paths: ['.github/workflows/lock-dependencies.yml']
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  lock:
+    if: github.repository == 'northernstingersuf-sudo/claude-animated-shorts'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/remotion-render-pipeline
+      - name: Restore and commit the verified lockfile
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Lockfile already exists"
+            exit 0
+          fi
+          gh run download 45705417072 --name render-45705417072 --dir "$RUNNER_TEMP/original-smoke"
+          cp "$RUNNER_TEMP/original-smoke/package-lock.json" .
+          echo "bb81de230018d3329c980612a90d3d9ca1dfa987c074302f7437e1623bb0ef8b  package-lock.json" | sha256sum -c -
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "Lock dependencies to verified smoke test installation"
+          git push origin HEAD:feat/remotion-render-pipeline

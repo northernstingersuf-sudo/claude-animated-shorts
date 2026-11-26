@@ -36,11 +36,12 @@ export function pose(w:PikeWorld,f:number,c:T.PerspectiveCamera,scene:T.Scene){
  const settle=smooth(1290,1340,f);
  w.fish.position.x+=launch*.85-settle*.4;w.fish.position.y+=launch*.16;
  w.tail.rotation.z+=launch*(1-settle)*Math.sin((f-EVENTS.jaws)*1.2)*.06;
- w.jaw.rotation.z=-smooth(EVENTS.jaws-4,EVENTS.jaws+1,f)*.018*(1-smooth(EVENTS.jaws+5,EVENTS.jaws+13,f));
+ w.jaw.rotation.z=-smooth(EVENTS.jaws-4,EVENTS.jaws+1,f)*.20*(1-smooth(EVENTS.jaws+5,EVENTS.jaws+13,f));
  const paused=f>=EVENTS.pause&&f<EVENTS.twitch;
  const wobble=f>=EVENTS.wobble;
  const lx=1.9+.18*Math.sin(t*.5);
  w.lure.position.set(lx,2.5+(paused?0:Math.sin(t*5)*.08),.15);
+ w.lure.rotation.y=0; // Reset every pose so random-access rendering matches sequential frames.
  w.lure.rotation.z=paused?-.04:Math.sin(t*7)*.13;
  if(f>=EVENTS.twitch&&f<EVENTS.twitch+15){w.lure.position.x+=.35*smooth(EVENTS.twitch,EVENTS.twitch+6,f);w.lure.rotation.z+=.16*Math.sin((f-EVENTS.twitch)*.3);}
  w.lure.visible=f< EVENTsContact || f>=1581;
@@ -51,8 +52,11 @@ export function pose(w:PikeWorld,f:number,c:T.PerspectiveCamera,scene:T.Scene){
  const points=[new T.Vector3(w.lure.position.x,7,0),new T.Vector3(w.lure.position.x+.2,(7+w.lure.position.y)/2,0),new T.Vector3(w.lure.position.x+.2,w.lure.position.y,.15)];
  w.line.geometry.dispose();w.line.geometry=new T.BufferGeometry().setFromPoints(points);w.line.visible=w.lure.visible;
  w.plants.forEach((p,i)=>{const wake=f>EVENTS.drive&&f<EVENTS.drive+50?Math.sin((f-EVENTS.drive)*.12)*.055:0;p.rotation.z=Math.sin(t*.8+i)*.025+wake;});
- w.particles.forEach((p,i)=>{p.position.y=((i*1.91+t*.035)%9)-.5;p.position.x=(i*1.37)%18-9+Math.sin(t*.4+i)*.06;});
+ w.particles.forEach((p,i)=>{p.position.z=-(i*.79)%15;p.position.y=((i*1.91+t*.035)%9)-.5;p.position.x=(i*1.37)%18-9+Math.sin(t*.4+i)*.06;});
  w.minnows.forEach((m,i)=>{m.position.x=((i*.8+t*.15)%12)-6;m.rotation.z=Math.sin(t*3+i)*.025;});
+ const hit=EVENTS.jaws+7;
+ if(f>=hit&&f<hit+24){const a=(f-hit)/24;w.particles.slice(0,25).forEach((p,i)=>{p.position.set(1.95+Math.cos(i*2.4)*a*1.2,2.5+Math.sin(i*2.4)*a*.7,.3+(i%4)*.1);});}
+ if(s.a===1101){const punch=smooth(EVENTS.jaws-10,EVENTS.jaws+10,f);c.position.z-=punch*1.5;c.position.x+=punch*.4;c.lookAt(.5+punch*.4,2.5,0);if(f>=hit&&f<hit+7)c.rotation.z+=Math.pow(-1,f-hit)*.015*(1-(f-hit)/7);}
  const turn=at('turns',29);w.fish.rotation.y=smooth(turn-6,turn+12,f)*.08;
  if(f>=246&&f<276){c.position.y=6.3-smooth(246,276,f)*3.3;c.lookAt(0,2.5,0);}
 }

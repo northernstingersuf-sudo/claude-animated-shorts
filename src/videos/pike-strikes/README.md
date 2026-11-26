@@ -1,5 +1,8 @@
 # PikeStrikes production
 
+Local draft renders use 144×256 for CPU timeline review; stills use 540×960 and
+strike previews use 270×480. Production remains 1080×1920.
+
 60 seconds, 1800 frames, 1080 × 1920, 30 fps. `art.ts` builds original painted
 Canvas textures and plum-outline cards; `world.ts` builds the original Three.js
 lake and shoreline. Postprocessing reuses bridge ink, two-pass lens blur and
@@ -14,7 +17,7 @@ Local commands from repository root (Python 3.12 venv, Node 22, FFmpeg):
 
 ```sh
 npm ci
-bash scripts/install_voice.sh
+PIP_CONSTRAINT="$PWD/requirements-pike-constraints.txt" bash scripts/install_voice.sh
 python scripts/produce_audio.py audio/PikeStrikes.json out/pike-audio --engine kokoro
 python scripts/align_voice.py audio/PikeStrikes.json out/pike-audio
 python scripts/verify_voice.py audio/PikeStrikes.json out/pike-audio

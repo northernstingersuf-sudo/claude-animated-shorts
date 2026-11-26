@@ -1,0 +1,10 @@
+PASS frame-70.png: 3086 distinct sampled colors
+PASS frame-195.png: 2126 distinct sampled colors
+PASS frame-260.png: 3511 distinct sampled colors
+PASS frame-410.png: 3630 distinct sampled colors
+PASS frame-700.png: 3608 distinct sampled colors
+PASS frame-930.png: 3350 distinct sampled colors
+PASS frame-1160.png: 3462 distinct sampled colors
+PASS frame-1211.png: 3579 distinct sampled colors
+PASS frame-1400.png: 3017 distinct sampled colors
+PASS frame-1690.png: 3205 distinct sampled colors

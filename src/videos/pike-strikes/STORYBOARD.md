@@ -13,6 +13,7 @@
 | 1581–1799 | Clues not commands | New lure observation, quiet callback and comment invitation |
 
 Word events come from `timing/words.json`, measured against the completed dry
-Kokoro narration. Events are rounded to 30 fps, then lead by two frames.
+Kokoro narration. Events are rounded to 30 fps, then anchor two frames early; preparation curves may begin earlier than
+the anchor (tail loading and jaw anticipation).
 Exact sound events (seconds): `timing/events.json`. The splash-like underwater
 strike is stylized; it is not presented as an air splash deep underwater.

@@ -20,7 +20,7 @@ export class PikeWorld {
  }
  // Near framing reeds are kept outside the central sight line.
  for(const x of [-4.2,4.2]){const p=this.plants[Math.round(x+5)];p.position.set(x,-1,3.8);p.scale.setScalar(1.4);}
- const body=card(fishArt('body'),6,2.4);this.tail=card(fishArt('tail'),6,2.4);this.jaw=card(fishArt('jaw'),6,2.4);this.fish.add(body,this.tail,this.jaw);this.water.add(this.fish);
+ const body=card(fishArt('body'),6,2.4);this.tail=card(fishArt('tail'),6,2.4);this.jaw=card(fishArt('jaw'),6,2.4);this.jaw.geometry.translate(-1.5,.13,0);this.jaw.position.set(1.5,-.13,.015);this.fish.add(body,this.tail,this.jaw);this.water.add(this.fish);
  this.lure.add(card(fishArt('lure'),2.3,.92));this.water.add(this.lure);
  this.line=new T.Line(new T.BufferGeometry(),new T.LineBasicMaterial({color:'#cee7d8',transparent:true,opacity:.65}));this.water.add(this.line);
  for(let i=0;i<100;i++){const p=new T.Mesh(new T.SphereGeometry(.011+i%3*.007,4,3),new T.MeshBasicMaterial({color:'#c5e0cc',transparent:true,opacity:.22}));p.position.set((i*1.37)%18-9,(i*1.91)%9,-(i*.79)%15);this.particles.push(p);this.water.add(p);}

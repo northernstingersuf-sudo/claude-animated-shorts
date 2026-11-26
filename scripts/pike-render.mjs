@@ -4,7 +4,7 @@ const mode=process.argv[2]??'stills';if(!['stills','preview','draft','production
 const dir='out/pike-strikes';mkdirSync(dir,{recursive:true});
 const run=(cmd,args)=>{const r=spawnSync(cmd,args,{stdio:'inherit'});if(r.status!==0)process.exit(r.status??1);};
 const common=['src/index.ts','PikeStrikes'];
-const scale=mode==='production'?1:mode==='preview'?.25:.5;
+const scale=mode==='production'?1:mode==='draft'?(2/15):mode==='preview'?.25:.5;
 const opts=[`--scale=${scale}`,'--gl=swangle','--timeout=180000',`--props=${JSON.stringify({dpr:scale})}`];
 if(process.env.CHROME_PATH)opts.push(`--browser-executable=${process.env.CHROME_PATH}`);
 if(mode==='stills'){

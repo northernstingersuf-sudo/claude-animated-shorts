@@ -1,4 +1,23 @@
-# Validation record — Northern Stingers 001
+# Directorial revision
+
+Review the [60-second animatic](direction-animatic.mp4), [22 shot samples](direction-shots.jpg),
+and [sequences sampled from the animatic](direction-motion.jpg). These supersede
+the first edit's picture artifacts listed below. The shot samples were rendered at
+540×960. The full animatic is 144×256 at 30 fps with the original soundtrack.
+
+Visual review drove four changes. The lure now crosses the eye in the opening
+second, the cast holds long enough to show water contact, the pause frames both
+subjects for the focus pull, and the closing shot gives the lure room to move.
+The strike reads in order across tail flex, overhead drive, held jaw approach,
+contact, and scattering fish and bubbles. The final shot alone was rerendered
+and spliced at frame 1579, with the original soundtrack muxed across the whole
+edit. The painted side and dorsal drawings retain the stylized card look.
+
+TypeScript and the still contrast checks passed. The animatic has 1,800 frames,
+AAC stereo, no flat frames and no consecutive identical frames in the decoded
+frame check. The 1080×1920 production render awaits approval.
+
+## First edit validation
 
 This record distinguishes executable checks from artistic approval. Source is a
 60-second, 1800-frame Remotion composition configured at 1080×1920 / 30 fps.

@@ -7,12 +7,12 @@ import {EffectComposer,RenderPass,EffectPass,ToneMappingEffect,ToneMappingMode} 
 import {InkPass,noInkFallback} from './ink';
 import {LensBlur} from './lensblur';
 import {PikeWorld} from './world';
-import {pose,shotAt} from './story';
+import {pose} from './story';
 const Inner:React.FC=()=>{
  const f=useCurrentFrame();const {scene,camera,gl}=useThree();
  const world=useMemo(()=>new PikeWorld(),[]);const composer=useRef<EffectComposer|null>(null);
  const lens=useMemo(()=>new LensBlur({maxCoC:20,nearScale:1.1}),[]);
- const paint=()=>{pose(world,f,camera as T.PerspectiveCamera,scene);noInkFallback(world.root);lens.focus=camera.position.distanceTo(new T.Vector3(0,2.5,0));lens.cInf=shotAt(f).blur;scene.updateMatrixWorld(true);composer.current?.render(1/30);};
+ const paint=()=>{const focus=pose(world,f,camera as T.PerspectiveCamera,scene);noInkFallback(world.root);lens.focus=focus.distance;lens.cInf=focus.blur;scene.updateMatrixWorld(true);composer.current?.render(1/30);};
  useLayoutEffect(()=>{
  gl.toneMapping=T.NoToneMapping;
  const c=new EffectComposer(gl,{multisampling:0,frameBufferType:T.HalfFloatType});

@@ -1,0 +1,87 @@
+name: Pike full render (sharded)
+on:
+  workflow_call:
+    inputs:
+      resolution:
+        type: string
+        default: draft
+        required: false
+  workflow_dispatch:
+    inputs:
+      resolution:
+        description: Review a draft before selecting production
+        type: choice
+        options: [draft, production]
+        default: draft
+permissions:
+  contents: read
+jobs:
+  frames:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        chunk: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libgbm1 libnss3 libatk1.0-0t64 libatk-bridge2.0-0t64 libasound2t64 libcups2t64
+          npm ci --no-audit --no-fund
+          npm run typecheck
+      - name: Render 120 frames
+        env:
+          CHUNK: ${{ matrix.chunk }}
+          RESOLUTION: ${{ inputs.resolution }}
+        run: |
+          SCALE=0.5
+          if [ "$RESOLUTION" = production ]; then SCALE=1; fi
+          START=$((CHUNK * 120))
+          END=$((START + 119))
+          mkdir -p out
+          npx --no-install remotion render src/index.ts PikeStrikes "out/chunk-$CHUNK.mp4" --frames="$START-$END" --scale="$SCALE" --props="{\"dpr\":$SCALE}" --gl=swangle --concurrency=1 --codec=h264 --crf=18 --timeout=180000
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pike-chunk-${{ matrix.chunk }}
+          path: out/chunk-*.mp4
+          retention-days: 7
+  assemble:
+    needs: frames
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pike-chunk-*
+          merge-multiple: true
+          path: out/chunks
+      - env:
+          RESOLUTION: ${{ inputs.resolution }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python - <<'PY'
+          from pathlib import Path
+          Path('out/chunks/list.txt').write_text(''.join("file 'chunk-%d.mp4'\n" % i for i in range(15)))
+          PY
+          ffmpeg -y -v error -f concat -safe 0 -i out/chunks/list.txt -i public/audio/PikeStrikes.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -t 60 out/PikeStrikes.mp4
+          WIDTH=540; HEIGHT=960
+          if [ "$RESOLUTION" = production ]; then WIDTH=1080; HEIGHT=1920; fi
+          python scripts/verify_video.py out/PikeStrikes.mp4 --width "$WIDTH" --height "$HEIGHT" --frames 1800 --audio
+          ffprobe -v error -show_streams -show_format -of json out/PikeStrikes.mp4 > out/media-info.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pike-full-${{ github.run_id }}
+          path: |
+            out/PikeStrikes.mp4
+            out/media-info.json
+          retention-days: 14

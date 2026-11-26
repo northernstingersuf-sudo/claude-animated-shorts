@@ -1,0 +1,63 @@
+{
+  "duration": 60,
+  "language": "en",
+  "kokoro_voice": "am_michael",
+  "kokoro_language": "en-us",
+  "neural_speed": 1,
+  "narration": [
+    {
+      "start": 0.05,
+      "end": 5.5,
+      "text": "A pike doesn't need to be hungry to attack your lure. Or can we really tell?"
+    },
+    {
+      "start": 5.7,
+      "end": 12.5,
+      "text": "One cast. Beneath the ripples, a pike waits in the weeds. Your lure enters its world."
+    },
+    {
+      "start": 12.7,
+      "end": 20.5,
+      "text": "A wobble. A flash. A sudden change of speed. To a visual hunter, those can look like prey."
+    },
+    {
+      "start": 20.7,
+      "end": 28.5,
+      "text": "Movement also pushes water. Along its body, the lateral line senses nearby water motion. Another clue, especially up close."
+    },
+    {
+      "start": 28.7,
+      "end": 36.5,
+      "text": "Now the lure pauses. The pike turns. Attention isn't a promise: a fish can follow without ever biting."
+    },
+    {
+      "start": 36.7,
+      "end": 44.5,
+      "text": "Then, a twitch. The body bends, the tail drives, and the jaws open. An ambush becomes an explosion."
+    },
+    {
+      "start": 44.7,
+      "end": 52.5,
+      "text": "Was that hunger? Opportunity? We can't read its mind from one strike. Conditions and individual fish change the odds."
+    },
+    {
+      "start": 52.7,
+      "end": 59.8,
+      "text": "Your lure offers clues, not commands. With Northern Stingers, keep watching the fish. What came before your last strike: pause, or twitch?"
+    }
+  ],
+  "music": {
+    "gain": 0.045,
+    "bpm": 96
+  },
+  "effects": [
+    {
+      "time": 6,
+      "type": "whoosh"
+    },
+    {
+      "time": 7.2,
+      "type": "splash"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 name: PikeStrikes 1080p production request
 
 # One-shot branch-scoped trigger. Ordinary source commits do not start this render.
+# Production request V2: directed 22-shot revision 86d7f29, approved 2026-11-26.
 on:
   push:
     branches: [feat/short-001-pike-strikes]

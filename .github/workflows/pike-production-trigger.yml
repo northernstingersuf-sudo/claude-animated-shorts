@@ -1,0 +1,20 @@
+name: PikeStrikes 1080p production request
+
+# One-shot branch-scoped trigger. Ordinary source commits do not start this render.
+on:
+  push:
+    branches: [feat/short-001-pike-strikes]
+    paths: ['.github/workflows/pike-production-trigger.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pike-production-request-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  production:
+    uses: ./.github/workflows/pike-full.yml
+    with:
+      resolution: production

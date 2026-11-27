@@ -1,0 +1,44 @@
+name: Accessories reel
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [review, production]
+        default: review
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg libgbm1 libasound2t64
+      - run: npm ci --no-audit --no-fund
+      - run: pip install numpy
+      - run: npm run typecheck
+      - run: npx remotion render src/index.ts Smoke3D out/accessories/smoke-3d.mp4 --gl=swangle --concurrency=1
+      - run: python scripts/verify_video.py out/accessories/smoke-3d.mp4 --width 540 --height 960 --frames 30
+      - run: python scripts/accessories-audio.py
+      - name: Review stills and draft
+        if: inputs.mode == 'review'
+        run: node scripts/accessories-review.mjs
+      - name: Reviewed full-resolution exports
+        if: inputs.mode == 'production'
+        run: |
+          node scripts/accessories-render.mjs production
+          python scripts/verify_video.py out/accessories/AccessoriesDontCount.mp4 --width 1080 --height 1920 --frames 480 --audio
+          python scripts/verify_video.py out/accessories/AccessoriesDontCountClean.mp4 --width 1080 --height 1920 --frames 480 --audio
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accessories-${{ inputs.mode }}-${{ github.run_id }}
+          path: out/accessories/
+          retention-days: 14

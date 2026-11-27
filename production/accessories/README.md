@@ -15,7 +15,7 @@ npm run typecheck
 node scripts/accessories-review.mjs
 # Inspect stills and draft.mp4, then record a fresh source-hash preview review.
 node scripts/accessories-render.mjs production
-python scripts/verify_video.py out/accessories/AccessoriesDontCount.mp4 --width 1080 --height 1920 --frames 480 --audio
+python scripts/accessories-qa.py
 python templates/scripts/short_qa.py out/accessories/AccessoriesDontCount.mp4 out/accessories/qa production/accessories/shots.json
 ```
 

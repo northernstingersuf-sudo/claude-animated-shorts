@@ -13,6 +13,11 @@ for file in files:
  assert a['codec_name']=='aac' and a['sample_rate']=='48000' and a['channels']==2,a
  assert all(v[k]=='bt709' for k in ['color_space','color_transfer','color_primaries']),v
  assert abs(float(p['format']['duration'])-16)<.04,p['format']
+ packets=json.loads(run('ffprobe','-v','error','-select_streams','v:0','-show_entries','packet=pts_time','-of','json',str(file)))['packets']
+ pts=np.sort([float(x['pts_time']) for x in packets])
+ assert len(pts)==480 and np.max(np.abs(np.diff(pts)-1/30))<1e-6,'Not constant 30 fps'
+ assert abs(float(v.get('start_time',0)))<.001 and abs(float(a.get('start_time',0)))<.001,'A/V start mismatch'
+
  check=run(sys.executable,'scripts/verify_video.py',str(file),'--width','1080','--height','1920','--frames','480','--audio').decode().strip()
  packet_hash=run('ffmpeg','-v','error','-i',str(file),'-map','0:a:0','-c:a','copy','-f','hash','-hash','sha256','-').decode().strip()
  results[file.name]={'probe':p,'verification':check,'audio_packet_hash':packet_hash,'sha256':hashlib.sha256(file.read_bytes()).hexdigest()}

@@ -27,7 +27,7 @@ const Box:React.FC<{p:V;s:V;c:string;rough?:number}> = ({p,s,c,rough=.68}) =>
   <mesh position={p} castShadow receiveShadow><boxGeometry args={s}/><meshStandardMaterial color={c} roughness={rough}/></mesh>;
 const Wire:React.FC<{points:V[];radius?:number;color?:string;metal?:boolean}> = ({points,radius=.016,color='#a1aaa8',metal=true}) => {
   const geo=useMemo(()=>new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(v=>new THREE.Vector3(...v))),24,radius,7,false),[points,radius]);
-  return <mesh geometry={geo} castShadow><meshStandardMaterial color={color} metalness={metal?.8:.05} roughness={metal?.28:.8}/></mesh>;
+  return <mesh geometry={geo} castShadow><meshStandardMaterial color={color} metalness={metal ? .8 : .05} roughness={metal ? .28 : .8}/></mesh>;
 };
 const Ring:React.FC<{p?:V;r?:number;rotation?:V}> = ({p=[0,0,0],r=.065,rotation=[0,0,0]}) =>
   <mesh position={p} rotation={rotation}><torusGeometry args={[r,.014,8,28]}/><Metal/></mesh>;
@@ -167,11 +167,12 @@ function poses(f:number) {
   const release=ease(f,165,180);
   const slide=ease(f,396,417);
   const step=ease(f,453,480)*.32;
-  const posBait=keys(f,[[0,[-1.14,2.42,.08]],[34,[-1.14,3.07,.08]],[54,[-1.10,3.07,.08]],[78,[.35,2.88,.08]],[100,[.35,2.70,.08]],[114,[-1.15,2.35,-.30]],[165,[-1.15,2.35,-.30]],[188,[-.99,2.88,-.30]],[222,[-.82,2.58,-.18]],[244,[2.07,.17,0]],[480,[2.07,.17,0]]]);
+  const posBait=keys(f,[[0,[-1.14,2.93,.08]],[34,[-1.14,3.47,.08]],[54,[-1.10,3.47,.08]],[78,[.35,3.28,.08]],[100,[.35,3.12,.08]],[114,[-1.15,3.06,-.30]],[165,[-1.15,3.06,-.30]],[188,[-.99,3.59,-.30]],[222,[-.82,3.29,-.18]],[244,[2.07,.17,0]],[480,[2.07,.17,0]]]);
   const rig= f<180 ? [posBait[0]+.06,posBait[1]-.07,posBait[2]+.10] as V :
-    f<339 ? keys(f,[[180,[-1.09,2.28,-.20]],[199,[-1.37,.20,-1.19]],[285,[-1.37,.20,-1.19]],[320,[-1.37,.20,-1.19]],[339,[-1.36,1.18,-1.19]]]) :
+    f<339 ? keys(f,[[180,[-1.09,3.02,-.20]],[199,[-1.37,.20,-1.19]],[285,[-1.37,.20,-1.19]],[320,[-1.37,.20,-1.19]],[339,[-1.36,3.04,-1.19]]]) :
     keys(f,[[339,[4.42,1.18,.77]],[365,[4.85,.98,.80]],[382,[4.85,.98,.80]],[453,[4.85,.98,.80]],[480,[4.85+step,.98,.80]]]);
   const lay=ease(f,182,199)*(1-ease(f,321,339));
+  if(f>=180&&f<339) rig[1]=Math.max(rig[1],.18+2.83*Math.cos(P/2*lay));
   const caseP:V=f<396?[1.30,.04,0]:[6.08+step,lerp(.78,.13,slide),.80];
   const caseRot:V=f<396?[0,0,0]:[P/2,0,0];
   const lid=(1-ease(f,255,270))*1.12;
@@ -180,10 +181,10 @@ function poses(f:number) {
 }
 type Cam={eye:V;at:V;lens:number;focus?:V;blur?:number;up?:V};
 function cameraAt(f:number):Cam {
-  if(f<54){const t=ease(f,10,35);return {eye:[-1.20,2.16,5.48],at:[-1.10,lerp(1.10,1.79,t),.05],lens:50};}
-  if(f<114){const t=ease(f,57,83);return {eye:[lerp(-.65,.46,t),2.85,4.20],at:[lerp(-.18,.35,t),1.42,.0],lens:28};}
-  if(f<165){const t=ease(f,123,146);return {eye:[-1.12,2.65,lerp(1.90,1.56,t)],at:[-1.09,2.33,-.20],lens:85};}
-  if(f<222)return {eye:[-1.12,2.82,2.45],at:[-1.03,2.52,-.22],lens:100};
+  if(f<54){const t=ease(f,10,35);return {eye:[-1.20,2.56,6.25],at:[-1.10,lerp(1.55,2.09,t),.05],lens:50};}
+  if(f<114){const t=ease(f,57,83);return {eye:[lerp(-.65,.46,t),2.85,4.20],at:[lerp(-.18,.35,t),1.80,.0],lens:28};}
+  if(f<165){const t=ease(f,123,146);return {eye:[-1.12,3.35,lerp(1.90,1.56,t)],at:[-1.09,3.03,-.20],lens:85};}
+  if(f<222)return {eye:[-1.12,3.45,3.35],at:[-1.03,3.28,-.22],lens:100};
   if(f<285)return {eye:[1.08,4.00,0],at:[1.08,.08,0],up:[0,0,-1],lens:50};
   if(f<339){const focus=mix([1.30,.28,.38],[-1.37,.22,-1.19],ease(f,305,320));return {eye:[.1,1.48,4.78],at:[-.03,.35,-.28],lens:50,focus,blur:30};}
   if(f<396)return {eye:[4.88,1.20,2.85],at:[4.85,.98,.77],lens:85};
@@ -216,11 +217,11 @@ const Scene:React.FC=()=>{
   const baitRotation:V=[0,0,-P/2*ease(f,222,243)];
   const right:V=f<244?[p.posBait[0]-.025,p.posBait[1]+.045,p.posBait[2]+.16]:
     f<285?keys(f,[[244,[2.05,.45,.12]],[258,[1.58,.51,.27]],[274,[1.30,.40,.46]],[285,[1.30,.33,.46]]]):
-    f<339?keys(f,[[285,[1.30,.33,.46]],[295,[1.30,.30,.46]],[304,[1.30,.55,.46]],[321,[-1.37,.30,-1.19]],[339,[-1.36,1.28,-1.19]]]):
+    f<339?keys(f,[[285,[1.30,.33,.46]],[295,[1.30,.30,.46]],[304,[1.30,.55,.46]],[321,[-1.37,.30,-1.19]],[339,[-1.36,3.14,-1.19]]]):
     f<396?keys(f,[[339,[4.48,1.23,.90]],[365,[4.85,1.04,.94]],[383,[4.95,1.11,.99]],[396,[5.4,.90,1.0]]]):
     keys(f,[[396,[6.08,.90,1.0]],[417,[6.08,.28,1.0]],[430,[6.64,.48,1.0]],[441,[6.30,.20,1.0]],[448,[6.30,.20,1.0]],[453,[6.60,.68,1.0]],[480,[6.96,.68,1.0]]]);
   const left:V=f<114?keys(f,[[0,[-2.50,.10,.12]],[100,[-2.50,.10,.12]],[114,[.00,.42,.14]]]):
-    f<222?keys(f,[[114,[-1.40,2.18,.03]],[165,[-1.26,2.22,.02]],[185,[-1.17,2.17,.02]],[200,[-1.45,.25,-.88]],[222,[-2.3,.10,-.3]]]):
+    f<222?keys(f,[[114,[-1.40,2.88,.03]],[165,[-1.26,2.92,.02]],[185,[-1.17,2.87,.02]],[200,[-1.45,.25,-.88]],[222,[-2.3,.10,-.3]]]):
     f<339?[-2.9,.2,-.6]:[4.80,.7,.95];
   return <>
     <color attach="background" args={['#323635']}/>
@@ -235,12 +236,12 @@ const Scene:React.FC=()=>{
     {f>=339&&<group position={[5.78+p.step,0,0]}><Bag/></group>}
     {f<244&&<group position={p.posBait} rotation={baitRotation}><SoftBait/></group>}
     <group position={p.rig} rotation={[-P/2*p.lay,0,0]}>
-      <Cluster f={f} open={p.release*(1-ease(f,345,368))} motion={f<114?.7:f>408?.3:.12}/>
+      <Cluster f={f} open={p.release*(1-ease(f,345,368))} motion={f<114 ? .7 : f>408 ? .3 : .12}/>
     </group>
     {f<339||f>=396?<group position={p.caseP} rotation={p.caseRot}><Case lid={p.lid} latch={p.latch} contains={f>=244}/></group>:null}
     {f>=339&&<Wire points={[[4.85+p.step,1.05,.69],[4.85+p.step,1.14,.79],[4.85+p.step,.98,.80]]} radius={.025} color="#aaaeb0"/>}
-    <Hand p={right} rotation={f>=396?[0,0,-.28]:f>=222&&f<339?[-.60,0,-.28]:[.06,0,-.14]} grip={f>=244&&f<321?.2:1}/>
-    {((f>=100&&f<222)||(f>=339&&f<382))&&<Hand p={left} rotation={[.10,0,1.0]} left grip={f<165?.4:1}/>}
+    <Hand p={right} rotation={f>=396?[0,0,-.28]:f>=222&&f<339?[-.60,0,-.28]:[.06,0,-.14]} grip={f>=244&&f<321 ? .2 : 1}/>
+    {((f>=100&&f<222)||(f>=339&&f<382))&&<Hand p={left} rotation={[.10,0,1.0]} left grip={f<165 ? .4 : 1}/>}
   </>;
 };
 const Reel:React.FC<{clean:boolean}>=({clean})=>{

@@ -115,6 +115,9 @@ jobs:
           npx --no-install remotion render src/index.ts BridgeShort out/bridge-preview-silent.mp4 --frames=0-149 --scale=0.5 --codec=h264 --crf=20 --concurrency=1 --gl=swangle --timeout=180000 --props='{"post":{"dpr":0.5}}'
           ffmpeg -y -v error -i out/bridge-preview-silent.mp4 -i out/bridge-audio/mix.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -af apad -shortest out/bridge-preview.mp4
           python scripts/verify_video.py out/bridge-preview.mp4 --width 540 --height 960 --frames 150 --audio --allow-flat 130 131 132 133
+      - name: Generate Accessories original Foley
+        if: (env.MODE == 'draft' || env.MODE == 'production' || env.MODE == 'high-quality') && env.AUDIO_MODE == 'auto' && (env.COMP == 'AccessoriesDontCount3D' || env.COMP == 'AccessoriesDontCount3DClean')
+        run: python scripts/accessories_foley.py "public/audio/$COMP.wav"
       - name: Generate and align production narration before rendering
         if: env.MODE != 'smoke' && env.MODE != 'bridge-preview' && env.MODE != 'still' && env.AUDIO_MODE == 'auto'
         shell: bash
@@ -157,6 +160,16 @@ jobs:
           if [[ "$AUDIO_MODE" != "none" && -f "$AUDIO" ]]; then
             ffmpeg -y -v error -i "out/$COMP.mp4" -i "$AUDIO" -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -af apad -shortest "out/$COMP-final.mp4"
             rm "out/$COMP.mp4"
+          fi
+          if [[ "$COMP" == AccessoriesDontCount3D || "$COMP" == AccessoriesDontCount3DClean ]]; then
+            case "$MODE" in draft) W=540; H=960 ;; production) W=1080; H=1920 ;; high-quality) W=1440; H=2560 ;; esac
+            VIDEO="out/$COMP.mp4"
+            AUDIO_FLAG=()
+            if [[ "$AUDIO_MODE" == auto ]]; then
+              VIDEO="out/$COMP-final.mp4"
+              AUDIO_FLAG=(--audio)
+            fi
+            python scripts/verify_video.py "$VIDEO" --width "$W" --height "$H" --frames 480 "${AUDIO_FLAG[@]}"
           fi
           ffprobe -v error -show_format -show_streams -of json out/*.mp4 > out/media-info.json
       - name: Upload render artifacts

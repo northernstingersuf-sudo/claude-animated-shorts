@@ -19,6 +19,7 @@ for sec,kind,amp in cues:
   if kind=='pat':s+=np.sin(2*np.pi*110*t)*np.exp(-t*40)
  s=s/max(abs(s))*amp;start=round(sec*SR);pan=-.08 if kind=='metal' else .05
  for c,g in enumerate([1-pan,1+pan]):a[start:start+n,c]+=s*g
+a *= 10**(6.5/20)  # linear gain; preserve Foley dynamics without a limiter
 pathlib.Path('public/audio').mkdir(parents=True,exist_ok=True)
 with wave.open('public/audio/AccessoriesDontCount.wav','wb') as w:w.setnchannels(2);w.setsampwidth(2);w.setframerate(SR);w.writeframes((np.clip(a,-1,1)*32767).astype('<i2').tobytes())
 pathlib.Path('production/accessories/audio-cues.json').write_text(json.dumps(cues,indent=2)+'\n')

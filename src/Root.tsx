@@ -1,14 +1,63 @@
-import React from 'react';
-import {Composition} from 'remotion';
-import {BridgeShort, BRIDGE_FRAMES} from '../templates/bridge/Bridge';
-import {Smoke2D, Smoke3D} from './Smoke';
+import React from "react";
+import { Composition } from "remotion";
+import { BridgeShort, BRIDGE_FRAMES } from "../templates/bridge/Bridge";
+import { Smoke2D, Smoke3D } from "./Smoke";
 
-import {Accessories, AccessoriesClean} from './videos/accessories/Accessories';
+import {
+  Accessories,
+  AccessoriesClean,
+  AccessoriesText,
+} from "./videos/accessories/Accessories";
 
-export const Root: React.FC = () => <>
-  <Composition id="AccessoriesDontCount" component={Accessories} width={1080} height={1920} fps={30} durationInFrames={480} />
-  <Composition id="AccessoriesDontCountClean" component={AccessoriesClean} width={1080} height={1920} fps={30} durationInFrames={480} />
-  <Composition id="Smoke2D" component={Smoke2D} width={540} height={960} fps={30} durationInFrames={30} />
-  <Composition id="Smoke3D" component={Smoke3D} width={540} height={960} fps={30} durationInFrames={30} />
-  <Composition id="BridgeShort" component={BridgeShort} width={1080} height={1920} fps={30} durationInFrames={BRIDGE_FRAMES} />
-</>;
+export const Root: React.FC = () => (
+  <>
+    <Composition
+      id="AccessoriesDontCount"
+      component={Accessories}
+      width={1080}
+      height={1920}
+      fps={30}
+      durationInFrames={480}
+    />
+    <Composition
+      id="AccessoriesDontCountClean"
+      component={AccessoriesClean}
+      width={1080}
+      height={1920}
+      fps={30}
+      durationInFrames={480}
+    />
+    <Composition
+      id="AccessoriesText"
+      component={AccessoriesText}
+      width={1080}
+      height={1920}
+      fps={30}
+      durationInFrames={480}
+    />
+    <Composition
+      id="Smoke2D"
+      component={Smoke2D}
+      width={540}
+      height={960}
+      fps={30}
+      durationInFrames={30}
+    />
+    <Composition
+      id="Smoke3D"
+      component={Smoke3D}
+      width={540}
+      height={960}
+      fps={30}
+      durationInFrames={30}
+    />
+    <Composition
+      id="BridgeShort"
+      component={BridgeShort}
+      width={1080}
+      height={1920}
+      fps={30}
+      durationInFrames={BRIDGE_FRAMES}
+    />
+  </>
+);

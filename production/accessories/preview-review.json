@@ -1,0 +1,41 @@
+{
+  "status": "approved",
+  "reviewer": "Codex self-review; no independent viewer",
+  "reviewed_at": "2026-11-27T16:40:22.430751+00:00",
+  "scope": "Full 480-frame story draft, latest S04 removal preview, latest S05 overhead and S08 retention stills. Targeted reviews cover the final hardware, framing and retention revisions.",
+  "sources": {
+    "src/videos/accessories/world.ts": "e15f42df9b84fadeb6327717de8c6da6c00627841fe686f0d0254807d84855a5",
+    "src/videos/accessories/Accessories.tsx": "5fb788ac96629daa5dc8f8a2f194f3563f1131007eb120fa53e08057e9590a8f",
+    "src/Root.tsx": "5b1e7d49e16332a103853b3f1d37a19d7e435554a1cac89d829740d17b61ac71",
+    "scripts/accessories-render.mjs": "a5940e4cc6dce91a5dd876427cadbfbbca4d983b775fdc89eb8acb7290232e22",
+    "scripts/accessories-audio.py": "f7b2c11124ff077796e206e29df271c6102b2172b13f7a449243223779b0dbdd",
+    "scripts/accessories-review.mjs": "9b52db9c22adc66a0f4947b79835f580a05be45217f1e3bf501eef567c0d46c9",
+    "package-lock.json": "bb81de230018d3329c980612a90d3d9ca1dfa987c074302f7437e1623bb0ef8b",
+    "requirements-accessories.txt": "172e9ac1e2fee27cbad9a1ac0d62b903960e8c86e287f1c8f9851def49c70afd",
+    "public/audio/AccessoriesDontCount.wav": "f9e51d3a029dc0c487cf3603960a0406620db1f232036a3a959192ba38e132af",
+    ".github/workflows/accessories.yml": "9edc0909d84c8aa7c73b63774815d06e02e6640f79290d414ac2746a7778b50e"
+  },
+  "evidence": {
+    "out/accessories/draft.mp4": "b90450db4f3471eed513ecd940a14768ce602d6ac2ddc1950a85a564c80fa47c",
+    "out/accessories/mechanism-review.mp4": "3f5b2ef8888d5448d6351fc24f52b75cb0a1585fd6bc3e782d25020bb2ec7718",
+    "out/accessories/frame-188.png": "3b4ed54626e0c2a6e1024287d2e8c413c60f835e394aabd7a7f3c8e97ff00dfb",
+    "out/accessories/frame-245.png": "e638f7f2a15b427ec7ee5f91e1708c000f3e2b8ee01e1f33277137768d1e49c5",
+    "out/accessories/frame-440.png": "04fd8d4b5b2166f31c0f1606b834cb3c259be60759f9a02a0e35109360a6572f",
+    "out/accessories/draft-qa/report.md": "1b4119ddc741fc687202365f566812067cd6eeae7e8394479ae75a951d222001"
+  },
+  "checks": {
+    "typecheck": "passed",
+    "smoke_2d_3d_audio": "passed locally",
+    "draft": "540x960, 480 frames, AAC stereo 48kHz, 16.000s",
+    "release_preview": "540x960, 57 frames, AAC audio",
+    "blank_frames": "none",
+    "motion_flags": "Reviewed: intended holds, sub-threshold mechanical movements and S07 reach; no unplanned cut",
+    "browser_cleanup": "Fixed close({silent:true}); subsequent still runs exit 0"
+  },
+  "limitations": [
+    "Visual self-review 7.8/10; procedural hands/materials below aspirational 8/10",
+    "No independent mobile, platform UI or headphone review",
+    "Original synthesized Foley; no practical capture",
+    "GitHub Actions disabled (HTTP 422)"
+  ]
+}

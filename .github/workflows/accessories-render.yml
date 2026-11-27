@@ -1,0 +1,80 @@
+name: Accessories Don't Count
+on:
+  push:
+    branches: [feat/accessories-dont-count-3d]
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [preview, production]
+        default: preview
+        description: Production only after reviewing the preview and eight stills.
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: accessories-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      MODE: ${{ inputs.mode || 'preview' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libgbm1 libnss3 libatk1.0-0t64 libatk-bridge2.0-0t64 libasound2t64 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libxkbcommon0 libcups2t64
+          if [ ! -f package-lock.json ]; then
+            gh run download 45705417072 --name render-45705417072 --dir "$RUNNER_TEMP/original-smoke"
+            cp "$RUNNER_TEMP/original-smoke/package-lock.json" .
+            echo "bb81de230018d3329c980612a90d3d9ca1dfa987c074302f7437e1623bb0ef8b  package-lock.json" | sha256sum -c -
+          fi
+          npm ci --no-audit --no-fund
+          mkdir -p out
+          npm run typecheck
+      - name: Smoke check
+        run: |
+          npx --no-install remotion render src/index.ts Smoke3D out/smoke.mp4 --codec=h264 --gl=swangle --concurrency=1
+          python scripts/verify_video.py out/smoke.mp4 --width 540 --height 960 --frames 30
+      - name: Review stills
+        run: |
+          mkdir -p out/stills
+          for frame in 0 85 145 182 260 316 372 430 479; do
+            npx --no-install remotion still src/index.ts AccessoriesDontCount3D "out/stills/$frame.png" --frame="$frame" --scale=0.5 --gl=swangle --timeout=180000
+          done
+          python scripts/verify_stills.py out/stills/0.png out/stills/430.png
+      - name: Original synthetic Foley
+        run: |
+          python scripts/accessories_foley.py out/foley.wav
+          ffmpeg -v info -i out/foley.wav -af loudnorm=I=-16:TP=-1:LRA=11:print_format=json -f null - 2>out/loudness.txt
+      - name: Render preview or reviewed production masters
+        run: |
+          SCALE=0.5; W=540; H=960
+          if [ "$MODE" = production ]; then SCALE=1; W=1080; H=1920; fi
+          for COMP in AccessoriesDontCount3D AccessoriesDontCount3DClean; do
+            if [ "$MODE" = preview ] && [ "$COMP" = AccessoriesDontCount3DClean ]; then continue; fi
+            npx --no-install remotion render src/index.ts "$COMP" "out/$COMP-silent.mp4" --codec=h264 --crf=17 --scale="$SCALE" --concurrency=1 --gl=swangle --timeout=180000
+            ffmpeg -y -v error -i "out/$COMP-silent.mp4" -i out/foley.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 224k -ar 48000 -ac 2 -movflags +faststart -t 16 "out/$COMP-$MODE.mp4"
+            python scripts/verify_video.py "out/$COMP-$MODE.mp4" --width "$W" --height "$H" --frames 480 --audio
+            ffprobe -v error -show_streams -show_format -of json "out/$COMP-$MODE.mp4" > "out/$COMP-media.json"
+            rm "out/$COMP-silent.mp4"
+          done
+          printf '%s\n' "Accessories don't count. What's your personal record for lures tangled together? 🎣 #pikefishing #fishinghumor #northernstingers" > out/caption.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accessories-${{ github.run_id }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 7

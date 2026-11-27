@@ -1,11 +1,7 @@
 name: Accessories Don't Count
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'src/videos/accessories-dont-count/Animated.tsx'
-      - 'scripts/accessories_foley.py'
-      - '.github/workflows/accessories-render.yml'
+  push:
+    branches: [feat/accessories-dont-count-3d]
   workflow_dispatch:
     inputs:
       mode:
